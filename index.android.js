@@ -13,7 +13,10 @@ import {
   TouchableOpacity
 } from 'react-native';
 import FBSDK, {LoginManager} from 'react-native-fbsdk'
-
+const {
+  LoginButton,
+  AccessToken
+} = FBSDK;
 export default class LoginFB extends Component {
   _fbAuth(){
     LoginManager.logInWithReadPermissions(['public_profile']).then(function(result) {
@@ -26,14 +29,48 @@ export default class LoginFB extends Component {
       console.log('An error occured' + error);
     })
   }
+  async initUser(token) {
+  fetch('https://graph.facebook.com/v2.8/me?fields=id,name,gender,age_range,link,locale,picture,cover&access_token=' + token)
+  .then((response) => response.json())
+  .then((json) => {
+    // Some user object has been set up somewhere, build that user here
+    // user.name = json.name
+    // user.id = json.id
+    // user.user_friends = json.friends
+    // user.email = json.email
+    // user.username = json.name
+    // user.loading = false
+    // user.loggedIn = true
+    console.log(json);
+    //user.avatar = setAvatar(json.id)
+  })
+  .catch(() => {
+    console.log('ERROR GETTING DATA FROM FACEBOOK');
+  })
+}
   render() {
     return (
       <View style={styles.container}>
-        <TouchableOpacity onPress={()=>this._fbAuth()}>
-          <Text>
-          Login FB
-          </Text>
-        </TouchableOpacity>
+        <LoginButton
+          publishPermissions={["publish_actions"]}
+          onLoginFinished={
+            (error, result) => {
+              if (error) {
+                alert("login has error: " + result.error);
+              } else if (result.isCancelled) {
+                alert("login is cancelled.");
+              } else {
+                AccessToken.getCurrentAccessToken().then(
+                  (data) => {
+                    console.log(data.accessToken.toString());
+                    this.initUser(data.accessToken);
+                  }
+                )
+
+              }
+            }
+          }
+          onLogoutFinished={() => alert("logout.")}/>
       </View>
     );
   }
